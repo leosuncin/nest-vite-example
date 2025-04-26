@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    env_file: .env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: pg_isready
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  integresql:
+    image: allaboutapps/integresql
+    profiles:
+      - testing
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGDATABASE: $POSTGRES_DB
+      PGUSER: $POSTGRES_USER
+      PGPASSWORD: $POSTGRES_PASSWORD
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGSSLMODE: "disable"
+    ports:
+      - '5000:5000'
+
+volumes:
+  postgres-data:
