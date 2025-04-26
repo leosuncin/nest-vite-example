@@ -1,6 +1,9 @@
 import { registerAs } from '@nestjs/config';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
+import { UserSubscriber } from '~/auth/user.subscriber';
+import { CreateUsersTable } from '~/migrations/1745708833862-create-users-table';
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
@@ -24,6 +27,8 @@ export default registerAs(
     username: process.env.POSTGRES_USER ?? 'postgres',
     password: process.env.POSTGRES_PASSWORD,
     synchronize: false,
+    migrations: [CreateUsersTable],
+    subscribers: [UserSubscriber],
     autoLoadEntities: true,
   }),
 );
