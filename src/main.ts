@@ -2,14 +2,17 @@ import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app.module';
 
-// @ts-expect-error Vite client
-if (import.meta.env.PROD) {
-  async function bootstrap() {
-    const app = await NestFactory.create(AppModule);
-    await app.listen(3000);
-  }
+async function setup() {
+  const app = await NestFactory.create(AppModule);
 
-  void bootstrap();
+  app.enableCors();
+
+  return app;
 }
 
-export const app = NestFactory.create(AppModule);
+// @ts-expect-error Vite client
+if (import.meta.env.PROD) {
+  void setup().then((app) => app.listen(process.env.PORT ?? 3000));
+}
+
+export const app = setup();
