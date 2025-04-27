@@ -19,6 +19,7 @@ describe('AuthController', () => {
               .mockImplementation((newUser: Register) =>
                 Promise.resolve(Object.assign(new User(), newUser)),
               ),
+            findUserBy: vi.fn().mockResolvedValue(new User()),
           },
         },
       ],
@@ -41,5 +42,14 @@ describe('AuthController', () => {
     const user = await controller.register(newUser);
 
     expect(user).toBeDefined();
+  });
+
+  it('should login with an user', async () => {
+    await expect(
+      controller.login({
+        email: 'john.doe@conduit.lol',
+        password: 'Th3Pa$$w0rd!',
+      }),
+    ).resolves.toBeDefined();
   });
 });

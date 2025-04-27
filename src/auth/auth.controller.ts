@@ -10,6 +10,7 @@ import {
 
 import { AuthService } from './auth.service';
 import { Register } from './register.dto';
+import { Login } from './login.dto';
 
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -20,5 +21,11 @@ export class AuthController {
   @HttpCode(HttpStatus.ACCEPTED)
   register(@Body() newUser: Register) {
     return this.authService.register(newUser);
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  login(@Body() credentials: Login) {
+    return this.authService.findUserBy('email', credentials.email);
   }
 }
