@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getDataSourceToken } from '@nestjs/typeorm';
+import { useContainer } from 'class-validator';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
@@ -79,6 +80,7 @@ describe('AuthController (e2e)', () => {
     app.useGlobalPipes(
       new ValidationPipe({ transform: true, whitelist: true }),
     );
+    useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
     await app.init();
     await app.get(getDataSourceToken()).runMigrations();
@@ -102,6 +104,63 @@ describe('AuthController (e2e)', () => {
       .expect((response) => {
         expect(response.body).toBeDefined();
         expect(response.body).not.toHaveProperty('password');
+      });
+  });
+
+  it('validate the registration data', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: '',
+        password: '',
+        username: '',
+      })
+      .expect(HttpStatus.BAD_REQUEST)
+      .expect((response) => {
+        expect(response.body).toEqual({
+          error: 'Bad Request',
+          message: [
+            'email must be an email',
+            'username must match /^[a-zA-Z][a-zA-Z0-9_.-]+$/ regular expression',
+            'username must be longer than or equal to 4 characters',
+            'password must be longer than or equal to 12 characters',
+          ],
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      });
+  });
+
+  it('avoid to register a duplicate user', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: 'john.doe@conduit.lol',
+        password: 'incididunt/ullamco/veniam/nostrud',
+        username: 'Lacy29',
+      })
+      .expect(HttpStatus.BAD_REQUEST)
+      .expect((response) => {
+        expect(response.body).toEqual({
+          error: 'Bad Request',
+          message: ['email «john.doe@conduit.lol» is already registered'],
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      });
+
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: 'Lyla99@gmail.com',
+        password: 'in-velit-deserunt-mollit-proident',
+        username: 'john.doe',
+      })
+      .expect(HttpStatus.BAD_REQUEST)
+      .expect((response) => {
+        expect(response.body).toEqual({
+          error: 'Bad Request',
+          message: ['username «john.doe» is already registered'],
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
       });
   });
 });
