@@ -6,14 +6,18 @@ import {
   MinLength,
 } from 'class-validator';
 
+import { IsNotRegister } from './is-not-register.validator';
+
 export class Register {
   @IsString()
   @IsEmail()
+  @IsNotRegister()
   readonly email!: string;
 
   @IsString()
   @MinLength(4)
   @Matches(/^[a-zA-Z][a-zA-Z0-9_.-]+$/)
+  @IsNotRegister()
   readonly username!: string;
 
   @IsString()

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import type { EqualOperator } from 'typeorm';
 
 import { AuthService } from './auth.service';
 import { Register } from './register.dto';
@@ -18,6 +19,28 @@ describe('AuthService', () => {
             save: vi
               .fn()
               .mockImplementation((user: User) => Promise.resolve(user)),
+            countBy: vi
+              .fn()
+              .mockImplementation(
+                ({
+                  email,
+                  username,
+                }: Partial<
+                  Record<'email' | 'username', EqualOperator<string>>
+                >) => {
+                  let count = 0;
+
+                  if (email?.value === 'john.doe@conduit.lol') {
+                    count++;
+                  }
+
+                  if (username?.value === 'john.doe') {
+                    count++;
+                  }
+
+                  return Promise.resolve(count);
+                },
+              ),
           },
         },
         AuthService,
@@ -40,5 +63,25 @@ describe('AuthService', () => {
     const user = await service.register(newUser);
 
     expect(user).toBeDefined();
+  });
+
+  it('should check if the email is registered', async () => {
+    await expect(
+      service.isRegistered({ email: 'Jailyn_Jenkins@gmail.com' }),
+    ).resolves.toEqual(false);
+
+    await expect(
+      service.isRegistered({ email: 'john.doe@conduit.lol' }),
+    ).resolves.toEqual(true);
+  });
+
+  it('should check if the username is registered', async () => {
+    await expect(
+      service.isRegistered({ username: 'Maiya_Mraz' }),
+    ).resolves.toEqual(false);
+
+    await expect(
+      service.isRegistered({ username: 'john.doe' }),
+    ).resolves.toEqual(true);
   });
 });
