@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import cookies from './config/cookies';
 import typeorm from './config/typeorm';
 
 @Module({
@@ -12,6 +13,7 @@ import typeorm from './config/typeorm';
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
+      load: [cookies],
     }),
     TypeOrmModule.forRootAsync(typeorm.asProvider()),
     AuthModule,
