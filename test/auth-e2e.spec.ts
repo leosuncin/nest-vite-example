@@ -7,6 +7,7 @@ import {
 import { Test } from '@nestjs/testing';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import { useContainer } from 'class-validator';
+import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
@@ -15,6 +16,7 @@ import { runSeeders } from 'typeorm-extension';
 import { AppModule } from '~/app.module';
 import { AuthService } from '~/auth/auth.service';
 import cookieNames from '~/auth/cookie-names.config';
+import { TokenService } from '~/auth/token.service';
 import { User } from '~/auth/user.entity';
 import { userFactory } from '~/auth/user.factory';
 import { UserSeeder } from '~/auth/user.seeder';
@@ -79,9 +81,9 @@ describe('AuthController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
 
-    app.useGlobalPipes(
-      new ValidationPipe({ transform: true, whitelist: true }),
-    );
+    app
+      .use(cookieParser(process.env.COOKIE_SECRET))
+      .useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
     useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
     await app.init();
@@ -246,6 +248,62 @@ describe('AuthController (e2e)', () => {
             'password must be longer than or equal to 12 characters',
           ],
           statusCode: HttpStatus.BAD_REQUEST,
+        });
+      });
+  });
+
+  it('get the authenticated user', async () => {
+    const data = {
+      email: 'john.doe@conduit.lol',
+      password: 'Th3Pa$$w0rd!',
+    };
+    const response = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send(data)
+      .expect(HttpStatus.OK);
+
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Cookie', response.headers['set-cookie'])
+      .expect(HttpStatus.OK)
+      .expect((response) => {
+        expect(response.body).toBeDefined();
+        expect(response.body).not.toHaveProperty('password');
+        expect(response.body).toHaveProperty('email', data.email);
+      });
+  });
+
+  it('require the access token to get the current user', async () => {
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .expect(HttpStatus.UNAUTHORIZED)
+      .expect((response) => {
+        expect(response.body).toStrictEqual({
+          message: 'Unauthorized',
+          statusCode: HttpStatus.UNAUTHORIZED,
+        });
+      });
+  });
+
+  it('fail to get the session user when the user no longer exist', async () => {
+    const accessToken = app.get(TokenService).generateAccessToken({
+      id: `user_${Math.random().toString(16).slice(2, 8)}`,
+      email: 'tressie59@hotmail.com',
+      password: '',
+      username: '',
+      bio: null,
+      image: null,
+    });
+
+    await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(HttpStatus.UNAUTHORIZED)
+      .expect((response) => {
+        expect(response.body).toStrictEqual({
+          error: 'User not found',
+          message: 'Unauthorized',
+          statusCode: HttpStatus.UNAUTHORIZED,
         });
       });
   });
