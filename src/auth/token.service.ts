@@ -2,6 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
+import { AuthService } from './auth.service';
+import type { JwtPayload } from './jwt-payload.interface';
 import sign from './sign-options.config';
 import { User } from './user.entity';
 
@@ -9,6 +11,7 @@ import { User } from './user.entity';
 export class TokenService {
   constructor(
     private readonly jwtService: JwtService,
+    private readonly authService: AuthService,
     @Inject(sign.KEY)
     private readonly signOptions: ConfigType<typeof sign>,
   ) {}
@@ -18,5 +21,9 @@ export class TokenService {
       { email: user.email },
       this.signOptions.accessToken,
     );
+  }
+
+  verifyAccessPayload(payload: JwtPayload) {
+    return this.authService.findUserBy('email', payload.email.toString());
   }
 }

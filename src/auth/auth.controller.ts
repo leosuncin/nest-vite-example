@@ -2,16 +2,22 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 
+import { AuthGuard } from '@nestjs/passport';
+import { CurrentUser } from './auth.decorator';
 import { AuthService } from './auth.service';
+import { JwtStrategy } from './jwt.strategy';
 import { Login } from './login.dto';
 import { Register } from './register.dto';
 import { TokenInterceptor } from './token.interceptor';
+import { User } from './user.entity';
 
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -30,5 +36,11 @@ export class AuthController {
   @UseInterceptors(TokenInterceptor)
   login(@Body() credentials: Login) {
     return this.authService.findUserBy('email', credentials.email);
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard(JwtStrategy.name))
+  getCurrentUser(@CurrentUser() user: User) {
+    return user;
   }
 }
