@@ -13,6 +13,8 @@ import { DataSource } from 'typeorm';
 import { runSeeders } from 'typeorm-extension';
 
 import { AppModule } from '~/app.module';
+import { AuthService } from '~/auth/auth.service';
+import cookieNames from '~/auth/cookie-names.config';
 import { User } from '~/auth/user.entity';
 import { userFactory } from '~/auth/user.factory';
 import { UserSeeder } from '~/auth/user.seeder';
@@ -104,6 +106,14 @@ describe('AuthController (e2e)', () => {
       .expect((response) => {
         expect(response.body).toBeDefined();
         expect(response.body).not.toHaveProperty('password');
+
+        expect(response.headers).toHaveProperty(
+          'set-cookie',
+          expect.arrayContaining([
+            expect.stringContaining(cookieNames().accessToken),
+            expect.stringContaining(cookieNames().refreshToken),
+          ]),
+        );
       });
   });
 
@@ -159,6 +169,82 @@ describe('AuthController (e2e)', () => {
         expect(response.body).toEqual({
           error: 'Bad Request',
           message: ['username «john.doe» is already registered'],
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      });
+  });
+
+  it('log in with valid credentials', async () => {
+    const data = {
+      email: 'john.doe@conduit.lol',
+      password: 'Th3Pa$$w0rd!',
+    };
+
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send(data)
+      .expect(HttpStatus.OK)
+      .expect((response) => {
+        expect(response.body).toBeDefined();
+        expect(response.body).not.toHaveProperty('password');
+        expect(response.body).toHaveProperty('email', data.email);
+
+        expect(response.headers).toHaveProperty(
+          'set-cookie',
+          expect.arrayContaining([
+            expect.stringContaining(cookieNames().accessToken),
+            expect.stringContaining(cookieNames().refreshToken),
+          ]),
+        );
+      });
+  });
+
+  it('fail to log in with invalid credentials', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email: 'John.Doe@conduit.lol',
+        password: 'VGgzUGEkJHcwcmQh',
+      })
+      .expect(HttpStatus.BAD_REQUEST)
+      .expect((response) => {
+        expect(response.body).toStrictEqual({
+          error: 'Bad Request',
+          message: ['The password is incorrect'],
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      });
+
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email: 'esther.sipes6@hotmail.com',
+        password: 'Th3Pa$$w0rd!',
+      })
+      .expect(HttpStatus.BAD_REQUEST)
+      .expect((response) => {
+        expect(response.body).toStrictEqual({
+          error: 'Bad Request',
+          message: ['The email is incorrect', 'The password is incorrect'],
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      });
+  });
+  it('validate the logging data', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email: '',
+        password: '',
+      })
+      .expect(HttpStatus.BAD_REQUEST)
+      .expect((response) => {
+        expect(response.body).toStrictEqual({
+          error: 'Bad Request',
+          message: [
+            'email must be an email',
+            'password must be longer than or equal to 12 characters',
+          ],
           statusCode: HttpStatus.BAD_REQUEST,
         });
       });

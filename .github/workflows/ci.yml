@@ -70,3 +70,5 @@ jobs:
           POSTGRES_DB: gullible-transparency
           POSTGRES_HOST: localhost
           INTEGRESQL_BASE_URL: http://localhost:5000
+          COOKIE_SECRET: laborum-nisi-laboris-aliqua-duis-ullamco-tempor-fugiat
+          JWT_SECRET: fugiat-sunt-ullamco-id-nulla-occaecat-lorem-aliquip-nostrud-irure-culpa-aliquip-qui-labore
