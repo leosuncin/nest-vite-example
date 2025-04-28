@@ -1,8 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+import cookies from '../config/cookies';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import cookieNames from './cookie-names.config';
 import { Register } from './register.dto';
+import { TokenService } from './token.service';
 import { User } from './user.entity';
 
 describe('AuthController', () => {
@@ -11,6 +14,18 @@ describe('AuthController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        {
+          provide: cookies.KEY,
+          useFactory: cookies,
+        },
+        {
+          provide: cookieNames.KEY,
+          useFactory: cookieNames,
+        },
+        {
+          provide: TokenService,
+          useValue: {},
+        },
         {
           provide: AuthService,
           useValue: {
