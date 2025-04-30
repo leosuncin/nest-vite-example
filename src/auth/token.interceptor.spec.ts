@@ -1,4 +1,5 @@
 import type { CallHandler } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { Test } from '@nestjs/testing';
 import { createMocks } from 'node-mocks-http';
@@ -6,6 +7,7 @@ import { lastValueFrom, of } from 'rxjs';
 
 import cookies from '../config/cookies';
 import cookieNames from './cookie-names.config';
+import signOptions from './sign-options.config';
 import { TokenInterceptor } from './token.interceptor';
 import { TokenService } from './token.service';
 import type { User } from './user.entity';
@@ -24,19 +26,17 @@ describe('TokenInterceptor', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          load: [cookies, cookieNames, signOptions],
+        }),
+      ],
       providers: [
-        {
-          provide: cookies.KEY,
-          useFactory: cookies,
-        },
-        {
-          provide: cookieNames.KEY,
-          useFactory: cookieNames,
-        },
         {
           provide: TokenService,
           useValue: {
             generateAccessToken: vi.fn().mockReturnValue('j.w.t'),
+            generateRefreshToken: vi.fn().mockReturnValue('j.w.t'),
           },
         },
         TokenInterceptor,
@@ -50,9 +50,8 @@ describe('TokenInterceptor', () => {
     expect(interceptor).toBeDefined();
   });
 
-  it('should inject the token into the user', async () => {
+  it('should inject the tokens into the cookies', async () => {
     const names = cookieNames();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const { req, res } = createMocks();
     const testContext = new ExecutionContextHost([req, res]);
     const nextSpy: CallHandler<User> = {
@@ -62,7 +61,26 @@ describe('TokenInterceptor', () => {
     await expect(
       lastValueFrom(interceptor.intercept(testContext, nextSpy)),
     ).resolves.toEqual(user);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     expect(res.cookies).toHaveProperty(names.accessToken);
+    expect(res.cookies).toHaveProperty(names.refreshToken);
+  });
+
+  it('should skip the refresh token if already exists', async () => {
+    const names = cookieNames();
+    const { req, res } = createMocks({
+      cookies: {
+        [cookieNames().refreshToken]: 'j.w.t',
+      },
+    });
+    const testContext = new ExecutionContextHost([req, res]);
+    const nextSpy: CallHandler<User> = {
+      handle: () => of(user),
+    };
+
+    await expect(
+      lastValueFrom(interceptor.intercept(testContext, nextSpy)),
+    ).resolves.toEqual(user);
+    expect(res.cookies).toHaveProperty(names.accessToken);
+    expect(res.cookies).not.toHaveProperty(names.refreshToken);
   });
 });

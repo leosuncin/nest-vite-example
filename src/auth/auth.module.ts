@@ -11,6 +11,7 @@ import cookieNames from './cookie-names.config';
 import { IsNotRegisterConstraint } from './is-not-register.validator';
 import { IsValidCredentialConstraint } from './is-valid-credential.validator';
 import { JwtStrategy } from './jwt.strategy';
+import { RefreshStrategy } from './refresh.strategy';
 import signOptions from './sign-options.config';
 import { TokenService } from './token.service';
 import { User } from './user.entity';
@@ -32,6 +33,7 @@ import { UserSubscriber } from './user.subscriber';
     IsValidCredentialConstraint,
     TokenService,
     JwtStrategy,
+    RefreshStrategy,
   ],
   controllers: [AuthController],
 })

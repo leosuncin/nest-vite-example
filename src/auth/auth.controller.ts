@@ -15,6 +15,7 @@ import { CurrentUser } from './auth.decorator';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { Login } from './login.dto';
+import { RefreshStrategy } from './refresh.strategy';
 import { Register } from './register.dto';
 import { TokenInterceptor } from './token.interceptor';
 import { User } from './user.entity';
@@ -41,6 +42,14 @@ export class AuthController {
   @Get('me')
   @UseGuards(AuthGuard(JwtStrategy.name))
   getCurrentUser(@CurrentUser() user: User) {
+    return user;
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard(RefreshStrategy.name))
+  @UseInterceptors(TokenInterceptor)
+  refresh(@CurrentUser() user: User) {
     return user;
   }
 }

@@ -1,11 +1,16 @@
-import { registerAs } from '@nestjs/config';
+import { registerAs, type ConfigType } from '@nestjs/config';
 import type { CookieOptions } from 'express';
 
-export default registerAs(
+const cookies = registerAs(
   'cookies',
-  (): CookieOptions => ({
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-  }),
+  () =>
+    ({
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+    }) as const satisfies CookieOptions,
 );
+
+type cookies = ConfigType<typeof cookies>;
+
+export default cookies;

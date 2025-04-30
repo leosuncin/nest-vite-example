@@ -1,3 +1,4 @@
+import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import cookies from '../config/cookies';
@@ -5,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import cookieNames from './cookie-names.config';
 import { Register } from './register.dto';
+import signOptions from './sign-options.config';
 import { TokenService } from './token.service';
 import { User } from './user.entity';
 
@@ -13,15 +15,12 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          load: [cookies, cookieNames, signOptions],
+        }),
+      ],
       providers: [
-        {
-          provide: cookies.KEY,
-          useFactory: cookies,
-        },
-        {
-          provide: cookieNames.KEY,
-          useFactory: cookieNames,
-        },
         {
           provide: TokenService,
           useValue: {},

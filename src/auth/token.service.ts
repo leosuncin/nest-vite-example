@@ -23,7 +23,15 @@ export class TokenService {
     );
   }
 
+  generateRefreshToken(user: User): string {
+    return this.jwtService.sign({ id: user.id }, this.signOptions.refreshToken);
+  }
+
   verifyAccessPayload(payload: JwtPayload) {
     return this.authService.findUserBy('email', payload.email.toString());
+  }
+
+  verifyRefreshPayload(payload: JwtPayload) {
+    return this.authService.findUserBy('id', payload.id.toString());
   }
 }

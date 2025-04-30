@@ -60,7 +60,7 @@ export class AuthService {
   }
 
   async findUserBy(
-    property: keyof Pick<User, 'email' | 'username'>,
+    property: keyof Pick<User, 'email' | 'id'>,
     value: User[typeof property],
   ) {
     return this.userRepository.findOneByOrFail({
