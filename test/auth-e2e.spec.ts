@@ -307,4 +307,50 @@ describe('AuthController (e2e)', () => {
         });
       });
   });
+
+  it('refresh the access token after expired', async () => {
+    const user = await app
+      .get(AuthService)
+      .findUserBy('email', 'john.doe@conduit.lol');
+    const refreshToken = app.get(TokenService).generateRefreshToken(user);
+
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', [`${cookieNames().refreshToken}=${refreshToken}`])
+      .expect(HttpStatus.OK)
+      .expect((response) => {
+        expect(response.body).toBeDefined();
+        expect(response.body).not.toHaveProperty('password');
+
+        expect(response.headers).toHaveProperty(
+          'set-cookie',
+          expect.arrayContaining([
+            expect.stringContaining(cookieNames().accessToken),
+          ]),
+        );
+      });
+  });
+
+  it('fail to refresh the access token when the user no longer exist', async () => {
+    const refreshToken = app.get(TokenService).generateRefreshToken({
+      id: `user_${Math.random().toString(16).slice(2, 8)}`,
+      email: '',
+      password: '',
+      username: '',
+      bio: null,
+      image: null,
+    });
+
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', [`${cookieNames().refreshToken}=${refreshToken}`])
+      .expect(HttpStatus.UNAUTHORIZED)
+      .expect((response) => {
+        expect(response.body).toStrictEqual({
+          error: 'Invalid session',
+          message: 'Unauthorized',
+          statusCode: HttpStatus.UNAUTHORIZED,
+        });
+      });
+  });
 });
