@@ -1,45 +1,31 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import type { Mocked } from '@suites/doubles.vitest';
+import { TestBed } from '@suites/unit';
+import type { Repository } from 'typeorm';
 
-import { TokenService } from './token.service';
 import { AuthService } from './auth.service';
 import signOptions from './sign-options.config';
+import { TokenService } from './token.service';
+import { User } from './user.entity';
 
 describe('TokenService', () => {
   let service: TokenService;
+  let repository: Mocked<Repository<User>>;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        {
-          provide: JwtService,
-          useValue: {
-            sign: vi.fn().mockReturnValue('j.w.t'),
-          },
-        },
-        {
-          provide: AuthService,
-          useValue: {
-            findUserBy: vi
-              .fn()
-              .mockImplementation((_: string, email: string) => {
-                if (email === 'john.doe@conduit.lol') {
-                  return Promise.resolve('j.w.t');
-                }
+    const { unit, unitRef } = await TestBed.sociable(TokenService)
+      .expose(AuthService)
+      .mock(JwtService)
+      .final({
+        sign: () => 'j.w.t',
+      })
+      .compile();
 
-                return Promise.reject(new Error('User not found'));
-              }),
-          },
-        },
-        {
-          provide: signOptions.KEY,
-          useFactory: signOptions,
-        },
-        TokenService,
-      ],
-    }).compile();
-
-    service = module.get<TokenService>(TokenService);
+    service = unit;
+    repository = unitRef.get(
+      getRepositoryToken(User) as string,
+    ) as unknown as Mocked<Repository<User>>;
   });
 
   it('should be defined', () => {
@@ -47,6 +33,8 @@ describe('TokenService', () => {
   });
 
   it('should verify the access payload', async () => {
+    void repository.findOneByOrFail.mockResolvedValue(new User());
+
     await expect(
       service.verifyAccessPayload({
         email: 'john.doe@conduit.lol',

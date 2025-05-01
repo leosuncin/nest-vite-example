@@ -1,4 +1,6 @@
 onlyBuiltDependencies:
   - '@nestjs/core'
+  - '@suites/di.nestjs'
+  - '@suites/doubles.vitest'
   - '@swc/core'
   - esbuild

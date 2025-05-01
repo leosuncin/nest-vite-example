@@ -1,7 +1,8 @@
 import type { CallHandler } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { Test } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
+import { TestBed } from '@suites/unit';
 import { createMocks } from 'node-mocks-http';
 import { lastValueFrom, of } from 'rxjs';
 
@@ -10,10 +11,10 @@ import cookieNames from './cookie-names.config';
 import signOptions from './sign-options.config';
 import { TokenInterceptor } from './token.interceptor';
 import { TokenService } from './token.service';
-import type { User } from './user.entity';
+import { User } from './user.entity';
 
 describe('TokenInterceptor', () => {
-  const user: User = {
+  const user = Object.assign(new User(), {
     id: `user_${Math.random().toString(16).slice(2, 8)}`,
     email: 'test@example.com',
     password: 'hashedpassword',
@@ -21,29 +22,34 @@ describe('TokenInterceptor', () => {
     bio: 'This is a test bio',
     image:
       'https://cloudflare-ipfs.com/ipfs/Qmd3W5DuhgHirLHGVixi6V76LhCkZUz6pnFt5AJBiyvHye/avatar/1065.jpg',
-  };
+  });
   let interceptor: TokenInterceptor;
 
   beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          load: [cookies, cookieNames, signOptions],
-        }),
-      ],
-      providers: [
-        {
-          provide: TokenService,
-          useValue: {
-            generateAccessToken: vi.fn().mockReturnValue('j.w.t'),
-            generateRefreshToken: vi.fn().mockReturnValue('j.w.t'),
-          },
+    const { unit } = await TestBed.sociable(TokenInterceptor)
+      .expose(TokenService)
+      .mock(JwtService)
+      .final({
+        sign() {
+          return 'j.w.t';
         },
-        TokenInterceptor,
-      ],
-    }).compile();
+      })
+      .mock(ConfigService)
+      .final({
+        get(key: string) {
+          switch (key) {
+            case 'cookies':
+              return cookies();
+            case 'cookieNames':
+              return cookieNames();
+            case 'signOptions':
+              return signOptions();
+          }
+        },
+      })
+      .compile();
 
-    interceptor = module.get(TokenInterceptor);
+    interceptor = unit;
   });
 
   it('should be defined', () => {

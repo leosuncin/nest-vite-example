@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { Test } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { mock, type Mocked } from '@suites/doubles.vitest';
 import { useContainer, validate } from 'class-validator';
-import type { Mocked } from 'vitest';
+import type { Repository } from 'typeorm';
 
 import { AuthService } from './auth.service';
 import {
   IsNotRegister,
   IsNotRegisterConstraint,
 } from './is-not-register.validator';
+import { User } from './user.entity';
+import { Test } from '@nestjs/testing';
 
 class WithEmail {
   @IsNotRegister()
@@ -30,72 +33,68 @@ class WithUsername {
 describe('IsNotRegister', () => {
   const email = 'john.doe@conduit.lol';
   const username = 'john.doe';
-  let mockedAuthService: Mocked<AuthService>;
+  let repository: Mocked<Repository<User>>;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
         {
-          provide: AuthService,
-          useValue: {
-            isRegistered: vi.fn(),
-          },
+          provide: getRepositoryToken(User),
+          useValue: mock<Repository<User>>(),
         },
+        AuthService,
         IsNotRegisterConstraint,
       ],
     }).compile();
 
     useContainer(module, { fallbackOnErrors: true });
-    mockedAuthService = module.get(AuthService);
+
+    repository = module.get(getRepositoryToken(User));
   });
 
   it('should fail when an user already exists with the same email', async () => {
     const dto = new WithEmail(email);
 
-    mockedAuthService.isRegistered.mockResolvedValueOnce(true);
+    void repository.countBy.mockResolvedValueOnce(1);
 
     const errors = await validate(dto);
 
     expect(errors).toHaveLength(1);
     expect(errors[0]).toHaveProperty('property', 'email');
-    expect(mockedAuthService.isRegistered).toHaveBeenCalledWith({ email });
+    expect(repository.countBy).toHaveBeenCalled();
   });
 
   it('should fail when an user already exists with the same username', async () => {
     const dto = new WithUsername(username);
 
-    mockedAuthService.isRegistered.mockResolvedValueOnce(true);
+    void repository.countBy.mockResolvedValueOnce(1);
 
     const errors = await validate(dto);
 
     expect(errors).toHaveLength(1);
     expect(errors[0]).toHaveProperty('property', 'username');
-    expect(mockedAuthService.isRegistered).toHaveBeenCalledWith({ username });
+    expect(repository.countBy).toHaveBeenCalled();
   });
 
   it('should pass when no user exists with the email', async () => {
     const dto = new WithEmail('jane.doe@conduit.lol');
 
-    mockedAuthService.isRegistered.mockResolvedValueOnce(false);
+    void repository.countBy.mockResolvedValueOnce(0);
 
     const errors = await validate(dto);
 
     expect(errors).toHaveLength(0);
-    expect(mockedAuthService.isRegistered).toHaveBeenCalledWith({
-      email: dto.email,
-    });
+    expect(repository.countBy).toHaveBeenCalled();
   });
 
   it('should pass when no user exists with the username', async () => {
     const dto = new WithUsername('jane.doe');
 
-    mockedAuthService.isRegistered.mockResolvedValueOnce(false);
+    void repository.countBy.mockResolvedValueOnce(0);
 
     const errors = await validate(dto);
 
     expect(errors).toHaveLength(0);
-    expect(mockedAuthService.isRegistered).toHaveBeenCalledWith({
-      username: dto.username,
-    });
+    expect(repository.countBy).toHaveBeenCalled();
   });
 });

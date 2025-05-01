@@ -1,46 +1,26 @@
-import { ConfigModule } from '@nestjs/config';
-import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import type { Mocked } from '@suites/doubles.vitest';
+import { TestBed } from '@suites/unit';
+import type { Repository } from 'typeorm';
 
-import cookies from '../config/cookies';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import cookieNames from './cookie-names.config';
 import { Register } from './register.dto';
-import signOptions from './sign-options.config';
-import { TokenService } from './token.service';
 import { User } from './user.entity';
 
 describe('AuthController', () => {
   let controller: AuthController;
+  let repository: Mocked<Repository<User>>;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          load: [cookies, cookieNames, signOptions],
-        }),
-      ],
-      providers: [
-        {
-          provide: TokenService,
-          useValue: {},
-        },
-        {
-          provide: AuthService,
-          useValue: {
-            register: vi
-              .fn()
-              .mockImplementation((newUser: Register) =>
-                Promise.resolve(Object.assign(new User(), newUser)),
-              ),
-            findUserBy: vi.fn().mockResolvedValue(new User()),
-          },
-        },
-      ],
-      controllers: [AuthController],
-    }).compile();
+    const { unit, unitRef } = await TestBed.sociable(AuthController)
+      .expose(AuthService)
+      .compile();
 
-    controller = module.get<AuthController>(AuthController);
+    controller = unit;
+    repository = unitRef.get(
+      getRepositoryToken(User) as string,
+    ) as unknown as Mocked<Repository<User>>;
   });
 
   it('should be defined', () => {
@@ -53,12 +33,15 @@ describe('AuthController', () => {
       password: 'Non id tempor',
       username: 'bettye.boyer',
     };
-    const user = await controller.register(newUser);
 
-    expect(user).toBeDefined();
+    void repository.save.mockResolvedValue(new User());
+
+    await expect(controller.register(newUser)).resolves.toBeDefined();
   });
 
   it('should login with an user', async () => {
+    void repository.findOneByOrFail.mockResolvedValue(new User());
+
     await expect(
       controller.login({
         email: 'john.doe@conduit.lol',
