@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { Register } from './register.dto';
 import { User } from './user.entity';
+import { UpdateUser } from './update-user.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -48,5 +49,21 @@ describe('AuthController', () => {
         password: 'Th3Pa$$w0rd!',
       }),
     ).resolves.toBeDefined();
+  });
+
+  it('should update the current user', async () => {
+    const user = new User();
+    const changes: UpdateUser = {
+      bio: 'Mollit dolor ipsum do elit excepteur.',
+    };
+
+    repository.merge.mockImplementation(Object.assign);
+    // @ts-expect-error stub
+    void repository.save.mockImplementation((user) => Promise.resolve(user));
+
+    await expect(controller.updateUser(user, changes)).resolves.toHaveProperty(
+      'bio',
+      changes.bio,
+    );
   });
 });

@@ -5,12 +5,16 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  ParseFilePipeBuilder,
+  Patch,
   Post,
+  UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
+
 import { CurrentUser } from './auth.decorator';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
@@ -18,6 +22,7 @@ import { Login } from './login.dto';
 import { RefreshStrategy } from './refresh.strategy';
 import { Register } from './register.dto';
 import { TokenInterceptor } from './token.interceptor';
+import { UpdateUser } from './update-user.dto';
 import { User } from './user.entity';
 
 @Controller('auth')
@@ -51,5 +56,28 @@ export class AuthController {
   @UseInterceptors(TokenInterceptor)
   refresh(@CurrentUser() user: User) {
     return user;
+  }
+
+  @Patch('me')
+  @UseGuards(AuthGuard(JwtStrategy.name))
+  @UseInterceptors(FileInterceptor('image'))
+  updateUser(
+    @CurrentUser()
+    user: User,
+    @Body()
+    changes: UpdateUser,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fallbackToMimetype: true,
+          fileType: 'image/jpeg',
+        })
+        .addMaxSizeValidator({ maxSize: 1024 * 1024 * 5 })
+        .build({ fileIsRequired: false }),
+    )
+    file?: Express.Multer.File,
+  ) {
+    changes.image = file?.originalname;
+    return this.authService.updateUser(user, changes);
   }
 }

@@ -5,6 +5,7 @@
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "target": "ES2023",
     "sourceMap": true,
@@ -18,7 +19,7 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "types": ["vite/client", "vitest/globals", "@suites/doubles.vitest/unit"],
+    "types": ["vite/client", "vitest/globals", "multer"],
     "paths": {
       "~/*": ["./src/*"]
     }

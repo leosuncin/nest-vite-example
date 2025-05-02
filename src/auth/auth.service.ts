@@ -5,6 +5,7 @@ import { Equal, type FindOptionsWhere, type Repository } from 'typeorm';
 
 import { Login } from './login.dto';
 import { Register } from './register.dto';
+import { UpdateUser } from './update-user.dto';
 import { User } from './user.entity';
 
 @Injectable()
@@ -66,5 +67,11 @@ export class AuthService {
     return this.userRepository.findOneByOrFail({
       [property]: value,
     });
+  }
+
+  updateUser(user: User, changes: UpdateUser) {
+    this.userRepository.merge(user, changes);
+
+    return this.userRepository.save(user);
   }
 }
