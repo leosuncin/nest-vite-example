@@ -72,12 +72,11 @@ export class AuthController {
           fallbackToMimetype: true,
           fileType: 'image/jpeg',
         })
-        .addMaxSizeValidator({ maxSize: 1024 * 1024 * 5 })
+        .addMaxSizeValidator({ maxSize: 2 ** 20 /* 1 mb */ })
         .build({ fileIsRequired: false }),
     )
-    file?: Express.Multer.File,
+    image?: Express.Multer.File,
   ) {
-    changes.image = file?.originalname;
-    return this.authService.updateUser(user, changes);
+    return this.authService.updateUser(user, changes, image);
   }
 }

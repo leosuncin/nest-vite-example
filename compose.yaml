@@ -1,4 +1,22 @@
 services:
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    env_file: .env
+    volumes:
+      - minio-data:/data
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    networks:
+      default:
+        aliases:
+          - minio.internal
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   postgres:
     image: postgres:17-alpine
     env_file: .env
@@ -29,4 +47,5 @@ services:
       - '5000:5000'
 
 volumes:
+  minio-data:
   postgres-data:
