@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/unbound-method */
+import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { mock, type Mocked } from '@suites/doubles.vitest';
 import { useContainer, validate } from 'class-validator';
+import { Client } from 'minio';
 import type { Repository } from 'typeorm';
 
 import { AuthService } from './auth.service';
@@ -10,7 +12,6 @@ import {
   IsNotRegisterConstraint,
 } from './is-not-register.validator';
 import { User } from './user.entity';
-import { Test } from '@nestjs/testing';
 
 class WithEmail {
   @IsNotRegister()
@@ -41,6 +42,10 @@ describe('IsNotRegister', () => {
         {
           provide: getRepositoryToken(User),
           useValue: mock<Repository<User>>(),
+        },
+        {
+          provide: Client,
+          useValue: mock<Client>(),
         },
         AuthService,
         IsNotRegisterConstraint,

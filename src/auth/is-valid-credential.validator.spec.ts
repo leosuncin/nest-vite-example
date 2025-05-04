@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { mock, type Mocked } from '@suites/doubles.vitest';
 import { useContainer, validate } from 'class-validator';
+import { Client } from 'minio';
 import { Repository } from 'typeorm';
 
 import { AuthService } from './auth.service';
@@ -50,6 +51,10 @@ describe('IsValidCredential', () => {
         {
           provide: getRepositoryToken(User),
           useValue: mock<Repository<User>>(),
+        },
+        {
+          provide: Client,
+          useValue: mock<Client>(),
         },
         AuthService,
         IsValidCredentialConstraint,

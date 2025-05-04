@@ -1,8 +1,10 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { mock } from '@suites/doubles.vitest';
 import { plainToInstance } from 'class-transformer';
 import { useContainer, validate } from 'class-validator';
-import { EqualOperator } from 'typeorm';
+import { Client } from 'minio';
+import type { EqualOperator } from 'typeorm';
 
 import { AuthService } from './auth.service';
 import { IsValidCredentialConstraint } from './is-valid-credential.validator';
@@ -36,6 +38,10 @@ describe('Login', () => {
                 ),
             ),
           },
+        },
+        {
+          provide: Client,
+          useValue: mock<Client>(),
         },
         AuthService,
         IsValidCredentialConstraint,
