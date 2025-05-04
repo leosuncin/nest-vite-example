@@ -353,4 +353,71 @@ describe('AuthController (e2e)', () => {
         });
       });
   });
+
+  it('update the current user', async () => {
+    const user = await app
+      .get(AuthService)
+      .findUserBy('email', 'john.doe@conduit.lol');
+    const accessToken = app.get(TokenService).generateAccessToken(user);
+    const fields = {
+      bio: 'Sunt est sint veniam sunt consequat tempor reprehenderit dolore aliquip enim ullamco sunt excepteur.',
+      password: 'Th3Pa$$w0rd!',
+    };
+
+    await request(app.getHttpServer())
+      .patch('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .attach('image', './test/fixtures/small.jpg')
+      .field(fields)
+      .expect(HttpStatus.OK)
+      .expect((response) => {
+        expect(response.body).toBeDefined();
+        expect(response.body).toHaveProperty('image');
+        expect(response.body).toHaveProperty('bio', fields.bio);
+      });
+  });
+
+  it('fail to upload a too large image', async () => {
+    const user = await app
+      .get(AuthService)
+      .findUserBy('email', 'john.doe@conduit.lol');
+    const accessToken = app.get(TokenService).generateAccessToken(user);
+
+    await request(app.getHttpServer())
+      .patch('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .attach('image', './test/fixtures/large.jpg')
+      .expect(HttpStatus.BAD_REQUEST)
+      .expect((response) => {
+        expect(response.body).toMatchObject({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          message: expect.stringMatching(
+            /Validation failed \(current file size is \d+, expected size is less than \d+\)/,
+          ),
+          error: 'Bad Request',
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      });
+  });
+
+  it('fail to upload a non image file', async () => {
+    const user = await app
+      .get(AuthService)
+      .findUserBy('email', 'john.doe@conduit.lol');
+    const accessToken = app.get(TokenService).generateAccessToken(user);
+
+    await request(app.getHttpServer())
+      .patch('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .attach('image', './test/fixtures/file.pdf')
+      .expect(HttpStatus.BAD_REQUEST)
+      .expect((response) => {
+        expect(response.body).toMatchObject({
+          message:
+            'Validation failed (current file type is application/pdf, expected type is image/jpeg) - magic number detection failed, used mimetype fallback',
+          error: 'Bad Request',
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      });
+  });
 });

@@ -33,6 +33,14 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
     services:
+      minio:
+        image: bitnami/minio
+        env:
+          MINIO_ROOT_USER: Junius2
+          MINIO_ROOT_PASSWORD: lorem-deserunt-nisi-pariatur-nulla-mollit-velit
+        ports:
+          - "9000:9000"
+        options: --health-cmd "mc ready local" --health-interval 5s --health-timeout 5s --health-retries 5
       postgres:
         image: postgres:17
         env:
@@ -72,3 +80,7 @@ jobs:
           INTEGRESQL_BASE_URL: http://localhost:5000
           COOKIE_SECRET: laborum-nisi-laboris-aliqua-duis-ullamco-tempor-fugiat
           JWT_SECRET: fugiat-sunt-ullamco-id-nulla-occaecat-lorem-aliquip-nostrud-irure-culpa-aliquip-qui-labore
+          MINIO_END_POINT: localhost
+          MINIO_ACCESS_KEY: Junius2
+          MINIO_SECRET_KEY: lorem-deserunt-nisi-pariatur-nulla-mollit-velit
+          MINIO_PORT: 9000
