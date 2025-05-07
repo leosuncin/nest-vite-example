@@ -17,7 +17,10 @@ class WithEmail {
   @IsNotRegister()
   readonly email!: string;
 
-  constructor(email: string) {
+  constructor(
+    email: string,
+    readonly id?: string,
+  ) {
     this.email = email;
   }
 }
@@ -26,7 +29,10 @@ class WithUsername {
   @IsNotRegister()
   readonly username!: string;
 
-  constructor(username: string) {
+  constructor(
+    username: string,
+    readonly id?: string,
+  ) {
     this.username = username;
   }
 }
@@ -34,6 +40,7 @@ class WithUsername {
 describe('IsNotRegister', () => {
   const email = 'john.doe@conduit.lol';
   const username = 'john.doe';
+  const user = Object.assign(new User(), { email, username });
   let repository: Mocked<Repository<User>>;
 
   beforeEach(async () => {
@@ -100,6 +107,50 @@ describe('IsNotRegister', () => {
     const errors = await validate(dto);
 
     expect(errors).toHaveLength(0);
+    expect(repository.countBy).toHaveBeenCalled();
+  });
+
+  it('should pass when the email is not used by another user', async () => {
+    const dto = new WithEmail('johndoe@example.com', user.id);
+
+    void repository.countBy.mockResolvedValueOnce(0);
+
+    const errors = await validate(dto);
+
+    expect(errors).toHaveLength(0);
+    expect(repository.countBy).toHaveBeenCalled();
+  });
+
+  it('should fail when the email is already used by another user', async () => {
+    const dto = new WithEmail('jane@doe.me', user.id);
+
+    void repository.countBy.mockResolvedValueOnce(1);
+
+    const errors = await validate(dto);
+
+    expect(errors).toHaveLength(1);
+    expect(repository.countBy).toHaveBeenCalled();
+  });
+
+  it('should pass when the username is not used by another user', async () => {
+    const dto = new WithUsername('johndoe', user.id);
+
+    void repository.countBy.mockResolvedValueOnce(0);
+
+    const errors = await validate(dto);
+
+    expect(errors).toHaveLength(0);
+    expect(repository.countBy).toHaveBeenCalled();
+  });
+
+  it('should fail when the username is already used by another user', async () => {
+    const dto = new WithUsername('jane.doe', user.id);
+
+    void repository.countBy.mockResolvedValueOnce(1);
+
+    const errors = await validate(dto);
+
+    expect(errors).toHaveLength(1);
     expect(repository.countBy).toHaveBeenCalled();
   });
 });

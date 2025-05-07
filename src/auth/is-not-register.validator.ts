@@ -11,14 +11,17 @@ import {
 import { AuthService } from './auth.service';
 
 @Injectable()
-@ValidatorConstraint({ async: true, name: 'isAlreadyRegister' })
+@ValidatorConstraint({ async: true, name: 'isNotRegister' })
 export class IsNotRegisterConstraint implements ValidatorConstraintInterface {
   constructor(private readonly authService: AuthService) {}
 
-  async validate(value: string, { property }: ValidationArguments) {
+  async validate(value: string, { object, property }: ValidationArguments) {
     if (isEmpty(value)) return true;
 
     const userExist = await this.authService.isRegistered({
+      ...('id' in object
+        ? ({ id: object.id } as Record<'id', `user_${string}`>)
+        : {}),
       [property]: value,
     });
 

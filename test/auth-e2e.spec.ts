@@ -361,7 +361,9 @@ describe('AuthController (e2e)', () => {
     const accessToken = app.get(TokenService).generateAccessToken(user);
     const fields = {
       bio: 'Sunt est sint veniam sunt consequat tempor reprehenderit dolore aliquip enim ullamco sunt excepteur.',
+      email: user.email,
       password: 'Th3Pa$$w0rd!',
+      username: 'John.Doe33',
     };
 
     await request(app.getHttpServer())
@@ -372,8 +374,11 @@ describe('AuthController (e2e)', () => {
       .expect(HttpStatus.OK)
       .expect((response) => {
         expect(response.body).toBeDefined();
+        expect(response.body).not.toHaveProperty('password');
         expect(response.body).toHaveProperty('image');
         expect(response.body).toHaveProperty('bio', fields.bio);
+        expect(response.body).toHaveProperty('email', user.email);
+        expect(response.body).toHaveProperty('username', fields.username);
       });
   });
 

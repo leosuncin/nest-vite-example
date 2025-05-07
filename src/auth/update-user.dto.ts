@@ -11,6 +11,9 @@ import {
 import { IsNotRegister } from './is-not-register.validator';
 
 export class UpdateUser {
+  @Allow()
+  readonly id!: `user_${string}`;
+
   @IsOptional()
   @IsString()
   @IsNotEmpty()

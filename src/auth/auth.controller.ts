@@ -17,6 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 import { CurrentUser } from './auth.decorator';
 import { AuthService } from './auth.service';
+import { CurrentUserInterceptor } from './current-user.interceptor';
 import { JwtStrategy } from './jwt.strategy';
 import { Login } from './login.dto';
 import { RefreshStrategy } from './refresh.strategy';
@@ -60,7 +61,7 @@ export class AuthController {
 
   @Patch('me')
   @UseGuards(AuthGuard(JwtStrategy.name))
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image'), CurrentUserInterceptor)
   updateUser(
     @CurrentUser()
     user: User,

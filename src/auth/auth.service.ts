@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { verify } from '@node-rs/argon2';
 import { Client } from 'minio';
-import { Equal, type FindOptionsWhere, type Repository } from 'typeorm';
+import { Equal, Not, type FindOptionsWhere, type Repository } from 'typeorm';
 
 import { Login } from './login.dto';
 import { Register } from './register.dto';
@@ -26,14 +26,17 @@ export class AuthService {
     return this.userRepository.save(user);
   }
 
-  async isRegistered(partial: Partial<Pick<User, 'email' | 'username'>>) {
-    const where: FindOptionsWhere<User> = {};
-
-    for (const [property, value] of Object.entries(partial)) {
-      if (value) {
-        where[property] = Equal(value);
-      }
-    }
+  async isRegistered(
+    partial: Partial<Pick<User, 'email' | 'id' | 'username'>>,
+  ) {
+    const where: FindOptionsWhere<User> = Object.fromEntries(
+      Object.entries(partial)
+        .filter(([, value]) => Boolean(value))
+        .map(([property, value]) => [
+          property,
+          property === 'id' ? Not(value) : Equal(value),
+        ]),
+    );
 
     const count = await this.userRepository.countBy(where);
 
