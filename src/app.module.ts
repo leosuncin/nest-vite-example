@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import cookies from './config/cookies';
 import minio from './config/minio';
 import typeorm from './config/typeorm';
+import { ProfileModule } from './profile/profile.module';
 import { MinioModule } from './shared/minio.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { MinioModule } from './shared/minio.module';
     TypeOrmModule.forRootAsync(typeorm.asProvider()),
     MinioModule.forRootAsync(minio.asProvider()),
     AuthModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

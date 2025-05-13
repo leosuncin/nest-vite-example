@@ -3,6 +3,7 @@ import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 import { UserSubscriber } from '~/auth/user.subscriber';
 import { CreateUsersTable } from '~/migrations/1745708833862-create-users-table';
+import { CreateProfileFollowsTable } from '~/migrations/1746404221231-create-profile_follows-table';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -27,7 +28,7 @@ export default registerAs(
     username: process.env.POSTGRES_USER ?? 'postgres',
     password: process.env.POSTGRES_PASSWORD,
     synchronize: false,
-    migrations: [CreateUsersTable],
+    migrations: [CreateUsersTable, CreateProfileFollowsTable],
     subscribers: [UserSubscriber],
     autoLoadEntities: true,
   }),
