@@ -34,29 +34,27 @@ jobs:
     runs-on: ubuntu-latest
     services:
       minio:
-        image: bitnami/minio
+        image: ghcr.io/11notes/minio:2025.10.15-nobody
+        command: /data
         env:
           MINIO_ROOT_USER: Junius2
           MINIO_ROOT_PASSWORD: lorem-deserunt-nisi-pariatur-nulla-mollit-velit
         ports:
           - "9000:9000"
-        options: --health-cmd "mc ready local" --health-interval 5s --health-timeout 5s --health-retries 5
+        volumes:
+          - minio_data:/data
       postgres:
-        image: postgres:17
+        image: ghcr.io/11notes/postgres:18
         env:
-          POSTGRES_USER: alford92
           POSTGRES_PASSWORD: mollit-non-dolor-laboris
-          POSTGRES_DB: gullible-transparency
         ports:
           - "5432:5432"
-        # needed because the postgres container does not provide a healthcheck
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       integresql:
         image: allaboutapps/integresql
         env:
-          PGUSER: alford92
+          PGUSER: postgres
           PGPASSWORD: mollit-non-dolor-laboris
-          PGDATABASE: gullible-transparency
+          PGDATABASE: postgres
           PGHOST: postgres
           PGPORT: "5432"
           PGSSLMODE: disable
@@ -73,9 +71,9 @@ jobs:
       - name: Run tests
         run: pnpm test
         env:
-          POSTGRES_USER: alford92
+          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: mollit-non-dolor-laboris
-          POSTGRES_DB: gullible-transparency
+          POSTGRES_DB: postgres
           POSTGRES_HOST: localhost
           INTEGRESQL_BASE_URL: http://localhost:5000
           COOKIE_SECRET: laborum-nisi-laboris-aliqua-duis-ullamco-tempor-fugiat
